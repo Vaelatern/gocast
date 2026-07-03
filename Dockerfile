@@ -11,6 +11,8 @@ COPY . /go/src/github.com/mayuresh82/gocast
 WORKDIR /go/src/github.com/mayuresh82/gocast
 
 RUN make linux
+ENV GOCACHE=/root/.cache/go-build
+RUN --mount=type=cache,target="/root/.cache/go-build" make linux
 
 FROM alpine:latest
 WORKDIR /root/
