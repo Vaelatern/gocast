@@ -187,22 +187,8 @@ func (m *MonitorMgr) Add(app *App) {
 	m.monMu.Unlock()
 	// if the same app already exists but its run loop is not running,
 	// then just restart the run loop
-	if existing != nil {
-		if existing.app.Source == nomadAppSource && !existing.app.EndpointEqual(app) {
-			glog.Infof("App %s but the endpoint changed", app.Name)
-			// the endpoint changed!
-			m.monMu.Lock()
-			// remove the existing app
-			m.Remove(existing.app.Name)
-			m.addApp(app)
-
-			existing = nil
-
-			m.monMu.Unlock()
-		}
-		if existing != nil && !existing.runLoopOn {
-			go m.runLoop(existing)
-		}
+	if existing != nil && !existing.runLoopOn {
+		go m.runLoop(existing)
 	} else {
 		// else add a new app and start its run loop
 		m.addApp(app)
@@ -241,21 +227,12 @@ func (m *MonitorMgr) Remove(appName string) {
 			switch len(parts) {
 			case 3:
 				localIp := m.ctrl.localIP
-				if a.app.Endpoint.HasIP() {
-					localIp = a.app.Endpoint.IP()
-				}
 				if err := natRule("D", a.app.Vip.Net.IP, localIp, parts[0], parts[1], parts[2]); err != nil {
 					glog.Errorf("Failed to remove app: %s: %v", a.app.Name, err)
 				}
 			case 2:
 				destPort := parts[1]
-				if a.app.Endpoint.Port() != 0 {
-					destPort = fmt.Sprintf("%d", a.app.Endpoint.Port())
-				}
 				localIp := m.ctrl.localIP
-				if a.app.Endpoint.HasIP() {
-					localIp = a.app.Endpoint.IP()
-				}
 				if err := natRule("D", a.app.Vip.Net.IP, localIp, parts[0], parts[1], destPort); err != nil {
 					glog.Errorf("Failed to remove app: %s: %v", a.app.Name, err)
 				}
@@ -305,21 +282,12 @@ func (m *MonitorMgr) checkCond(am *appMon) error {
 				switch len(parts) {
 				case 3:
 					localIp := m.ctrl.localIP
-					if am.app.Endpoint.HasIP() {
-						localIp = am.app.Endpoint.IP()
-					}
 					if err := natRule("A", app.Vip.Net.IP, localIp, parts[0], parts[1], parts[2]); err != nil {
 						return err
 					}
 				case 2:
 					destPort := parts[1]
-					if am.app.Endpoint.Port() != 0 {
-						destPort = fmt.Sprintf("%d", am.app.Endpoint.Port())
-					}
 					localIp := m.ctrl.localIP
-					if am.app.Endpoint.HasIP() {
-						localIp = am.app.Endpoint.IP()
-					}
 					if err := natRule("A", app.Vip.Net.IP, localIp, parts[0], parts[1], destPort); err != nil {
 						return err
 					}
@@ -390,19 +358,10 @@ func (m *MonitorMgr) CloseAll() {
 			switch len(parts) {
 			case 3:
 				localIp := m.ctrl.localIP
-				if am.app.Endpoint.HasIP() {
-					localIp = am.app.Endpoint.IP()
-				}
 				_ = natRule("D", am.app.Vip.Net.IP, localIp, parts[0], parts[1], parts[2])
 			case 2:
 				destPort := parts[1]
-				if am.app.Endpoint.Port() != 0 {
-					destPort = fmt.Sprintf("%d", am.app.Endpoint.Port())
-				}
 				localIp := m.ctrl.localIP
-				if am.app.Endpoint.HasIP() {
-					localIp = am.app.Endpoint.IP()
-				}
 				_ = natRule("D", am.app.Vip.Net.IP, localIp, parts[0], parts[1], destPort)
 			default:
 				continue

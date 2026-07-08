@@ -276,13 +276,20 @@ func (m *NomadMonitor) serviceToApp(s nomadMiniServiceInfo, ns string) (*App, er
 	if vip == "" {
 		return nil, fmt.Errorf("no \"gocast_vip\" tag found in matched service: %s", s.Name)
 	}
+	// munge nats from nomad service discovery to include the actual service port
+	// when the tag only specifies proto:lport (so dport comes from the discovered service port)
+	if service.Port != 0 {
+		for i, nat := range nats {
+			p := strings.Split(nat, ":")
+			if len(p) == 2 {
+				nats[i] = fmt.Sprintf("%s:%s:%d", p[0], p[1], service.Port)
+			}
+		}
+	}
 	app, err := NewApp(fmt.Sprintf("%s@%s", service.Name, ns), vip, vipConf, monitors, nats, nomadAppSource)
 	if err != nil {
 		return nil, err
 	}
-
-	app.Endpoint.ip = net.ParseIP(service.Address)
-	app.Endpoint.port = uint16(service.Port)
 
 	return app, nil
 }

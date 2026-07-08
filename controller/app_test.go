@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"net"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -46,13 +45,9 @@ func TestEquality(t *testing.T) {
 	a.Nil(err)
 	app2, err := NewApp("app1", "1.1.1.1/32", config.VipConfig{}, []string{"port:tcp:123"}, []string{}, "")
 	a.Nil(err)
-	app2.Endpoint.port = 12345
 	app3, err := NewApp("app1", "1.1.1.1/32", config.VipConfig{}, []string{"port:tcp:123"}, []string{}, "source")
 	a.Nil(err)
-	app3.Endpoint.ip = net.IPv4(127, 0, 0, 1)
 
 	a.True(app1.Equal(app2))
-	a.False(app1.EndpointEqual(app2))
 	a.False(app1.Equal(app3))
-	a.False(app1.EndpointEqual(app3))
 }
